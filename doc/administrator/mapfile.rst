@@ -25,10 +25,30 @@ This section provides information on how to configure *private layers* (a.k.a
 *restricted layers*), and layers involved in ``point query``, ``box query``,
 ``query builder`` features.
 
-.. note::
+Print
+-----
 
-   To make the rotation working (used by the print), we needs to specify 
-   the ``PROJECTION`` on the ``MAP`` and on all the ``LAYERS``.
+MapFish Print does single tile requests to the WMS server. For that reason we
+need to use a relatively large value for the ``MAXSIZE`` parameter (of the
+``MAP`` section); 5000 for example.
+
+MapFish Print also supports map rotations. This implies specific requirements:
+
+* The ``MAP`` and all the ``LAYERS`` should have a ``PROJECTION``. For
+  example::
+
+      PROJECTION
+          "init=epsg:21781"
+      END
+* When rotating the map (with a non-zero value for ``ANGLE``) there are
+  important things to be aware of. Make sure to read the notes for the
+  ``ANGLE`` parameter on http://mapserver.org/mapfile/map.html.
+
+MapFish Print uses a resolution of 254 dpi (instead of 72 dpi as used for the
+web application on the screen). Using ``LAYER``/``SYMBOLSCALEDENOM`` is
+therefore not recommended. ``LABEL``/``MINSIZE`` and ``LABEL``/``MAXSIZE``
+should be used when necessary only, as these parameters do not take the ``MAP``
+resolution into account.
 
 WFS GetFeature
 --------------
@@ -46,6 +66,7 @@ And it should have the following ``METADATA``::
 
     "gml_include_items" "all"
     "gml_types" "auto"
+    "wfs_enable_request" "*"
 
 .. warning::
 
@@ -157,10 +178,53 @@ with a pattern for all the variable substitution present in the ``DATA``.
 The mapfile should be a ``.map.in`` file, for the Buildout variable to be
 substituted at Buildout execution time.
 
-Recommendations
----------------
 
-To have a good print and screen result, it's not recommended to use
-``LAYER``/``SYMBOLSCALEDENOM``. 
-``LABEL``/``MINSIZE`` and ``LABEL``/``MAXSIZE`` should be used only 
-when necessary.
+Variable Substitution
+---------------------
+
+We can use the substitution to for example hide some attributes
+for sub role.
+
+To do that you should edit your MapFile in the ``MAP``/``LAYER``/``METADATA``
+section and add::
+
+    "default_s_<variable>" "<default_value>"
+    "s_<variable>_validation_pattern" "<validation_pattern>"
+
+The ``validation_pattern`` is a regular expression to validate the argument,
+for example if you want only lowercase char and coma it can be ``^[a-z,]*$$``
+(the double '$' is needed is we are in a ``.in`` file).
+
+Now in the ``LAYER`` you can use ``%s_<variable>%`` where you want the
+value.
+
+Than in the admin interface you can create a Functionality named
+``mapserver_substitution`` with the value: ``<variable>=<value>``.
+
+Unfortunately we can't use substitution in the ``MATADATA`` values than
+in ours example we can do columns restriction on a ``LAYER``,
+with the variable ``columns``, with the defaut visible column:
+``name``::
+
+    LAYER
+        ...
+        DATA "geom FROM (SELECT t.geom, t.type, t.gid, %s_columns% FROM geodata.table as t)  AS foo using unique gid using SRID=21781"
+        METADATA
+            ...
+            "gml_exclude_items" "type,gid"
+            "gml_include_items" "all"
+            "default_s_columns" "t.name"
+            "s_columns_validation_pattern" "^[a-z,._]*$$"
+        END
+        CLASS
+            EXPRESSION ([type]=1)
+            ...
+        END
+        ...
+    END
+
+In the admin interface we can allow a role to access to the columns name and private
+by liked it to the ``mapserver_substitution`` functionnalities ``columns=t.name``
+and ``columns=t.private``.
+
+`MapServer documentation <http://mapserver.org/cgi/runsub.html>`_
