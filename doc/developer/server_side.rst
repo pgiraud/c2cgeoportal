@@ -41,12 +41,12 @@ of an existing c2cgeoportal application. Here's how:
 
     rm -rf ./buildout/eggs/c2cgeoportal-*
 
-* Remove the version of c2cgeoportal in the setup.py
-  (``'c2cgeoportal==x.y'`` => ``'c2cgeoportal'``)
+* Remove the line for c2cgeoportal in the ``versions.cfg``
 
 * Build::
 
     ./buildout/bin/buildout -c c2cgeoportal/buildout_dev.cfg
+    ./buildout/bin/buildout -c c2cgeoportal/buildout_$USER.cfg
 
 
 Tests
