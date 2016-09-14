@@ -845,7 +845,7 @@ node_modules/ngeo/buildtools/mako_build.json: .build/node_modules.timestamp
 		--var generate_exports=true $< > $@
 
 .PRECIOUS: .build/%.js
-.build/%.js: .build/%.json $(OL_JS_FILES) $(NGEO_JS_FILES) $(APP_JS_FILES) \
+.build/%.js: .build/%.json template-generate $(OL_JS_FILES) $(NGEO_JS_FILES) $(APP_JS_FILES) \
 		.build/gmftemplatecache.js \
 		.build/externs/angular-$(ANGULAR_VERSION).js \
 		.build/externs/angular-$(ANGULAR_VERSION)-q_templated.js \
